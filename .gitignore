@@ -110,6 +110,13 @@ ENV/
 env.bak/
 venv.bak/
 
+# no saving foler
+.vscode/
+data/
+
+
+
+
 # Spyder project settings
 .spyderproject
 .spyproject
