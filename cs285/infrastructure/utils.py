@@ -35,8 +35,17 @@ def sample_trajectory(env, policy, max_path_length, render=False):
         # TODO use the most recent ob to decide what to do
         # ac = TODO # HINT: this is a numpy array
         ac = policy.forward(ptu.from_numpy(ob))
-        ac = ptu.to_numpy(ac)
+
+        # if ac is 2D tensor, then we pick the first element
+        if ac.dim() > 1:
+            ac = ac[0]
+        # if len(ac) > 1:
         # ac = ac[0]
+
+
+        ac = ptu.to_numpy(ac)
+
+
 
         # TODO: take that action and get reward and next ob
         # in this version of gym. There is one extra vairable 

@@ -54,7 +54,7 @@ def build_mlp(
     return mlp
 
 
-class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
+class MLPPolicySL_distribution(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     """
     Defines an MLP for supervised learning which maps observations to continuous
     actions.
@@ -103,7 +103,8 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.mean_net.to(ptu.device)
         self.logstd = nn.Parameter(
 
-            torch.zeros(self.ac_dim, dtype=torch.float32, device=ptu.device)
+            torch.ones(self.ac_dim, dtype=torch.float32, device=ptu.device),
+            requires_grad=True
         )
         self.logstd.to(ptu.device)
         self.optimizer = optim.Adam(
@@ -130,24 +131,25 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         # through it. For example, you can return a torch.FloatTensor. You can also
         # return more flexible objects, such as a
         # `torch.distributions.Distribution` object. It's up to you!
-        actions = self.mean_net(observation)
-        # actions = actions.squeeze(1) # (B, 1) -> (B)
+        # actions = self.mean_net(observation)
 
         # TODO: can change to distribution analysis
 
-        # mean = self.mean_net(observation)
+        mean = self.mean_net(observation)
         # mean = mean.squeeze(1)  # Assuming you still want to squeeze the singleton dimension
 
-        # # Learnable log standard deviation
-        # logstd = self.logstd.expand_as(mean)
+        # Learnable log standard deviation
+        logstd = self.logstd.expand_as(mean)
 
-        # # Create a normal distribution with the mean and learned log standard deviation
+        # Create a normal distribution with the mean and learned log standard deviation
         # action_distribution = distributions.Normal(mean, torch.exp(logstd))
+        action_distribution = distributions.Normal(mean, logstd)
 
-        # # Sample an action from the distribution
-        # action = action_distribution.sample()
-
-        return actions
+        # Sample an action from the distribution
+        action = action_distribution.sample()
+        # breakpoint()
+        action.requires_grad_(True)
+        return action
 
         raise NotImplementedError
 
@@ -167,10 +169,10 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         observations = observations.to(ptu.device)
         actions = actions.to(ptu.device)
         action_preds = self.forward(observations)
-        loss = criterion(action_preds, actions)
-        
+
         # breakpoint()
 
+        loss = criterion(action_preds, actions)
         loss.backward()
         self.optimizer.step()
         loss = loss.detach().item()
