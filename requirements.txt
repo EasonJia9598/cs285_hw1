@@ -12,4 +12,4 @@ opencv-python==4.6.0.66
 ipdb==0.13.9
 swig==4.1.1.post1
 box2d-py==2.3.8
-numpy==1.26.2
+numpy==1.23

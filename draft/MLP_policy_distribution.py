@@ -178,6 +178,7 @@ class MLPPolicySL_distribution(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         #     epoch_loss += loss.detach().cpu().numpy().squeeze()
 
         action_distribution = self.forward(observations)
+        # put minus sign for minimizing the loss as the minimum negative log likelihood
         loss = -action_distribution.log_prob(actions).sum()
         loss.backward()
         self.optimizer.step()
@@ -188,5 +189,5 @@ class MLPPolicySL_distribution(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             'Training Loss': loss,
         }
     
-    def get_actions(self, states):
+    def get_action(self, states):
         return self.forward(states).sample()

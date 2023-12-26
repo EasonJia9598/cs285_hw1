@@ -141,7 +141,8 @@ def run_training_loop(params):
             # TODO: collect `params['batch_size']` transitions
             # HINT: use utils.sample_trajectories
             # TODO: implement missing parts of utils.sample_trajectory
-            paths, envsteps_this_batch = TODO
+            paths, envsteps_this_batch = utils.sample_trajectories(
+                env, actor, params['batch_size'], params['ep_len'])
 
             # relabel the collected obs with actions from a provided expert policy
             if params['do_dagger']:
@@ -150,7 +151,8 @@ def run_training_loop(params):
                 # TODO: relabel collected obsevations (from our policy) with labels from expert policy
                 # HINT: query the policy (using the get_action function) with paths[i]["observation"]
                 # and replace paths[i]["action"] with these expert labels
-                paths = TODO
+                paths[0]["action"] = expert_policy.get_action(paths[0]["observation"])
+
 
         #########################################################################
         #########################################################################
@@ -170,11 +172,11 @@ def run_training_loop(params):
           # HINT2: use np.random.permutation to sample random indices
           # HINT3: return corresponding data points from each array (i.e., not different indices from each array)
           # for imitation learning, we only need observations and actions.  
-
-          observation_length = len(paths[0]["observation"])
+          
+          observation_length = len(replay_buffer.obs)
           choosen_indices = np.random.permutation(observation_length)
           choosen_indices = choosen_indices[:params['train_batch_size']]
-          ob_batch, ac_batch = paths[0]["observation"][choosen_indices], paths[0]["action"][choosen_indices]
+          ob_batch, ac_batch = replay_buffer.obs[choosen_indices], replay_buffer.acs[choosen_indices]
 
           # use the sampled data to train an agent
           train_log = actor.update( torch.FloatTensor(ob_batch),  torch.FloatTensor(ac_batch))
@@ -245,7 +247,7 @@ def main():
     parser.add_argument('--eval_batch_size', type=int,
                         default=1000)  # eval data collected (in the env) for logging metrics
     parser.add_argument('--train_batch_size', type=int,
-                        default=200)  # number of sampled data points to be used per gradient/train step
+                        default=100)  # number of sampled data points to be used per gradient/train step
 
     parser.add_argument('--n_layers', type=int, default=2)  # depth, of policy to be learned
     parser.add_argument('--size', type=int, default=64)  # width of each layer, of policy to be learned

@@ -12,6 +12,7 @@ from typing import Any
 from torch import nn
 from torch.nn import functional as F
 from torch import optim
+from torch.utils.data import DataLoader, TensorDataset
 
 import numpy as np
 import torch
@@ -54,7 +55,7 @@ def build_mlp(
     return mlp
 
 
-class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
+class MLP_policy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     """
     Defines an MLP for supervised learning which maps observations to continuous
     actions.
@@ -103,7 +104,8 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.mean_net.to(ptu.device)
         self.logstd = nn.Parameter(
 
-            torch.zeros(self.ac_dim, dtype=torch.float32, device=ptu.device)
+            torch.randn(self.ac_dim, dtype=torch.float32, device=ptu.device),
+            requires_grad=True
         )
         self.logstd.to(ptu.device)
         self.optimizer = optim.Adam(
@@ -117,9 +119,6 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         """
         torch.save(self.state_dict(), filepath)
 
-    def get_actions(self, states):
-        return self.forward(states)
-    
     def forward(self, observation: torch.FloatTensor) -> Any:
         """
         Defines the forward pass of the network
@@ -133,24 +132,23 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         # through it. For example, you can return a torch.FloatTensor. You can also
         # return more flexible objects, such as a
         # `torch.distributions.Distribution` object. It's up to you!
-        actions = self.mean_net(observation)
-        # actions = actions.squeeze(1) # (B, 1) -> (B)
+        # actions = self.mean_net(observation)
 
         # TODO: can change to distribution analysis
 
-        # mean = self.mean_net(observation)
+        mean = self.mean_net(observation)
         # mean = mean.squeeze(1)  # Assuming you still want to squeeze the singleton dimension
 
-        # # Learnable log standard deviation
-        # logstd = self.logstd.expand_as(mean)
-
-        # # Create a normal distribution with the mean and learned log standard deviation
+        # Create a normal distribution with the mean and learned log standard deviation
         # action_distribution = distributions.Normal(mean, torch.exp(logstd))
-
-        # # Sample an action from the distribution
+        action_distribution = distributions.Normal(mean, self.logstd.exp())
+        # Sample an action from the distribution
         # action = action_distribution.sample()
-
-        return actions
+        # # breakpoint()
+        # result = action_distribution.log_prob(action)
+        # breakpoint()
+        # print(result)
+        return action_distribution
 
         raise NotImplementedError
 
@@ -165,23 +163,31 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         """
         # TODO: update the policy and return the loss
 
-        criterion = nn.MSELoss(reduction='mean')
+        # criterion = nn.MSELoss(reduction='mean')
         self.optimizer.zero_grad() 
         observations = observations.to(ptu.device)
         actions = actions.to(ptu.device)
-        action_preds = self.forward(observations)
-        loss = criterion(action_preds, actions)
-        
-        # breakpoint()
+        # dataset = TensorDataset(observations, actions)
+        # loader = DataLoader(dataset, batch_size=64, shuffle=True) # gives you data in batches
+        # epoch_loss = 0
+        # # for curr_states, curr_actions in loader:
+        #     action_distribution = self.forward(curr_states)
+        #     loss = -action_distribution.log_prob(curr_actions).sum()
+        #     loss.backward()
+        #     self.optimizer.step()
+        #     epoch_loss += loss.detach().cpu().numpy().squeeze()
 
+        action_distribution = self.forward(observations)
+        # put minus sign for minimizing the loss as the minimum negative log likelihood
+        loss = -action_distribution.log_prob(actions).sum()
         loss.backward()
         self.optimizer.step()
-        loss = loss.detach().item()
-
-
-
+        loss = loss.detach().cpu().numpy().squeeze()
         return {
             # You can add extra logging information here, but keep this line
             # 'Training Loss': ptu.to_numpy(loss),
             'Training Loss': loss,
         }
+    
+    def get_action(self, states):
+        return self.forward(states).sample()

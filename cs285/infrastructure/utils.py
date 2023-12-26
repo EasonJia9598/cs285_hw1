@@ -35,7 +35,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
     
         # TODO use the most recent ob to decide what to do
         # ac = TODO # HINT: this is a numpy array
-        ac = policy.get_actions(ptu.from_numpy(ob))
+        ac = policy.get_action(ptu.from_numpy(ob))
 
         # if ac is 2D tensor, then we pick the first element
         if ac.dim() > 1:
@@ -67,6 +67,10 @@ def sample_trajectory(env, policy, max_path_length, render=False):
         'distance_from_origin': 0.056158617824247796, 'x_velocity': -0.49894584098278555, 
         'y_velocity': 0.11579151587997107, 'forward_reward': -0.49894584098278555})
         '''
+        # if it's Windows, then
+        # next_ob, rew, done, _, _ = env.step(ac)
+        
+        # otherwise 
         next_ob, rew, done, _= env.step(ac)
         
 
