@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# no saving foler
+.vscode/
+# data/
 hidden_draft/
 
 # C extensions
@@ -112,9 +115,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# no saving foler
-.vscode/
-data/
+
 
 
 

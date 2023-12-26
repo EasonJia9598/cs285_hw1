@@ -102,12 +102,24 @@ class MLP_policy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             n_layers=self.n_layers, size=self.size,
         )
         self.mean_net.to(ptu.device)
-        self.logstd = nn.Parameter(
 
+
+        # add support of log_net
+        self.log_net = build_mlp(
+            # the order of input and ouput are different than the build_mlp class
+            input_size=self.ob_dim,
+            output_size=self.ac_dim,
+            n_layers=self.n_layers, size=self.size,
+        )
+        self.log_net.to(ptu.device)
+
+        # original logstd parameter
+        self.logstd = nn.Parameter(
             torch.randn(self.ac_dim, dtype=torch.float32, device=ptu.device),
             requires_grad=True
         )
         self.logstd.to(ptu.device)
+
         self.optimizer = optim.Adam(
             itertools.chain([self.logstd], self.mean_net.parameters()),
             self.learning_rate
@@ -138,10 +150,11 @@ class MLP_policy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
         mean = self.mean_net(observation)
         # mean = mean.squeeze(1)  # Assuming you still want to squeeze the singleton dimension
-
+        # log_std = self.log_net(observation)
         # Create a normal distribution with the mean and learned log standard deviation
         # action_distribution = distributions.Normal(mean, torch.exp(logstd))
         action_distribution = distributions.Normal(mean, self.logstd.exp())
+        # action_distribution = distributions.Normal(mean, log_std.exp())
         # Sample an action from the distribution
         # action = action_distribution.sample()
         # # breakpoint()
