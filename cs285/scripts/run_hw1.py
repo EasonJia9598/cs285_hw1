@@ -20,6 +20,7 @@ from cs285.infrastructure.replay_buffer import ReplayBuffer
 from cs285.policies.MLP_policy import MLPPolicySL
 from cs285.policies.loaded_gaussian_policy import LoadedGaussianPolicy
 
+from tqdm.auto import tqdm
 
 # how many rollouts to save as videos to tensorboard
 MAX_NVIDEO = 2
@@ -160,7 +161,7 @@ def run_training_loop(params):
         # train agent (using sampled data from replay buffer)
         print('\nTraining agent using sampled data from replay buffer...')
         training_logs = []
-        for _ in range(params['num_agent_train_steps_per_iter']):
+        for _ in tqdm(range(params['num_agent_train_steps_per_iter'])):
 
           # TODO: sample some data from replay_buffer
           # HINT1: how much data = params['train_batch_size']
@@ -230,7 +231,7 @@ def main():
     parser.add_argument('--do_dagger', action='store_true')
     parser.add_argument('--ep_len', type=int)
 
-    parser.add_argument('--num_agent_train_steps_per_iter', type=int, default=1000)  # number of gradient steps for training policy (per iter in n_iter)
+    parser.add_argument('--num_agent_train_steps_per_iter', type=int, default=100000)  # number of gradient steps for training policy (per iter in n_iter)
     parser.add_argument('--n_iter', '-n', type=int, default=1)
 
     parser.add_argument('--batch_size', type=int, default=1000)  # training data collected (in the env) during each iteration

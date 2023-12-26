@@ -117,6 +117,9 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         """
         torch.save(self.state_dict(), filepath)
 
+    def get_actions(self, states):
+        return self.forward(states)
+    
     def forward(self, observation: torch.FloatTensor) -> Any:
         """
         Defines the forward pass of the network

@@ -20,6 +20,9 @@ from cs285.infrastructure.replay_buffer import ReplayBuffer
 from cs285.policies.MLP_policy_distribution import MLPPolicySL_distribution
 from cs285.policies.loaded_gaussian_policy import LoadedGaussianPolicy
 
+from tqdm.auto import tqdm
+# from tqdm import tqdm
+
 
 # how many rollouts to save as videos to tensorboard
 MAX_NVIDEO = 2
@@ -160,8 +163,8 @@ def run_training_loop(params):
         # train agent (using sampled data from replay buffer)
         print('\nTraining agent using sampled data from replay buffer...')
         training_logs = []
-        for _ in range(params['num_agent_train_steps_per_iter']):
-
+        for _ in tqdm(range(params['num_agent_train_steps_per_iter'])):
+        # for _ in range(params['num_agent_train_steps_per_iter']):
           # TODO: sample some data from replay_buffer
           # HINT1: how much data = params['train_batch_size']
           # HINT2: use np.random.permutation to sample random indices
@@ -221,7 +224,8 @@ def run_training_loop(params):
 
     
     # break point for checking actor properties
-    # breakpoint()
+    #breakpoint()
+            
 
 
 def main():
@@ -234,14 +238,14 @@ def main():
     parser.add_argument('--do_dagger', action='store_true')
     parser.add_argument('--ep_len', type=int)
 
-    parser.add_argument('--num_agent_train_steps_per_iter', type=int, default=1000)  # number of gradient steps for training policy (per iter in n_iter)
+    parser.add_argument('--num_agent_train_steps_per_iter', type=int, default=100000)  # number of gradient steps for training policy (per iter in n_iter)
     parser.add_argument('--n_iter', '-n', type=int, default=1)
 
     parser.add_argument('--batch_size', type=int, default=1000)  # training data collected (in the env) during each iteration
     parser.add_argument('--eval_batch_size', type=int,
                         default=1000)  # eval data collected (in the env) for logging metrics
     parser.add_argument('--train_batch_size', type=int,
-                        default=100)  # number of sampled data points to be used per gradient/train step
+                        default=200)  # number of sampled data points to be used per gradient/train step
 
     parser.add_argument('--n_layers', type=int, default=2)  # depth, of policy to be learned
     parser.add_argument('--size', type=int, default=64)  # width of each layer, of policy to be learned

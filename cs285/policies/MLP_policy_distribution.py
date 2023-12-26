@@ -12,6 +12,7 @@ from typing import Any
 from torch import nn
 from torch.nn import functional as F
 from torch import optim
+from torch.utils.data import DataLoader, TensorDataset
 
 import numpy as np
 import torch
@@ -103,7 +104,7 @@ class MLPPolicySL_distribution(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.mean_net.to(ptu.device)
         self.logstd = nn.Parameter(
 
-            torch.ones(self.ac_dim, dtype=torch.float32, device=ptu.device),
+            torch.randn(self.ac_dim, dtype=torch.float32, device=ptu.device),
             requires_grad=True
         )
         self.logstd.to(ptu.device)
@@ -138,18 +139,16 @@ class MLPPolicySL_distribution(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         mean = self.mean_net(observation)
         # mean = mean.squeeze(1)  # Assuming you still want to squeeze the singleton dimension
 
-        # Learnable log standard deviation
-        logstd = self.logstd.expand_as(mean)
-
         # Create a normal distribution with the mean and learned log standard deviation
         # action_distribution = distributions.Normal(mean, torch.exp(logstd))
-        action_distribution = distributions.Normal(mean, logstd)
-
+        action_distribution = distributions.Normal(mean, self.logstd.exp())
         # Sample an action from the distribution
-        action = action_distribution.sample()
+        # action = action_distribution.sample()
+        # # breakpoint()
+        # result = action_distribution.log_prob(action)
         # breakpoint()
-        action.requires_grad_(True)
-        return action
+        # print(result)
+        return action_distribution
 
         raise NotImplementedError
 
@@ -164,23 +163,30 @@ class MLPPolicySL_distribution(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         """
         # TODO: update the policy and return the loss
 
-        criterion = nn.MSELoss(reduction='mean')
+        # criterion = nn.MSELoss(reduction='mean')
         self.optimizer.zero_grad() 
         observations = observations.to(ptu.device)
         actions = actions.to(ptu.device)
-        action_preds = self.forward(observations)
+        # dataset = TensorDataset(observations, actions)
+        # loader = DataLoader(dataset, batch_size=64, shuffle=True) # gives you data in batches
+        # epoch_loss = 0
+        # # for curr_states, curr_actions in loader:
+        #     action_distribution = self.forward(curr_states)
+        #     loss = -action_distribution.log_prob(curr_actions).sum()
+        #     loss.backward()
+        #     self.optimizer.step()
+        #     epoch_loss += loss.detach().cpu().numpy().squeeze()
 
-        # breakpoint()
-
-        loss = criterion(action_preds, actions)
+        action_distribution = self.forward(observations)
+        loss = -action_distribution.log_prob(actions).sum()
         loss.backward()
         self.optimizer.step()
-        loss = loss.detach().item()
-
-
-
+        loss = loss.detach().cpu().numpy().squeeze()
         return {
             # You can add extra logging information here, but keep this line
             # 'Training Loss': ptu.to_numpy(loss),
             'Training Loss': loss,
         }
+    
+    def get_actions(self, states):
+        return self.forward(states).sample()

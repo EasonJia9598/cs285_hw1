@@ -19,7 +19,8 @@ def sample_trajectory(env, policy, max_path_length, render=False):
     # initialize env for the beginning of a new rollout
     ob =  env.reset() # initial observation after resetting the env
     # ob = [np array[..., ..., ...], {}]
-    ob = ob[0] # Get the numpy array from the list
+    if ob.ndim > 1:
+        ob = ob[0] # Get the numpy array from the list
     # init vars
     obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
     steps = 0
@@ -34,7 +35,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
     
         # TODO use the most recent ob to decide what to do
         # ac = TODO # HINT: this is a numpy array
-        ac = policy.forward(ptu.from_numpy(ob))
+        ac = policy.get_actions(ptu.from_numpy(ob))
 
         # if ac is 2D tensor, then we pick the first element
         if ac.dim() > 1:
@@ -49,6 +50,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
 
         # TODO: take that action and get reward and next ob
         # in this version of gym. There is one extra vairable 
+        # in windows only
         '''
         (Pdb) env.step(ac)
         (array([ 6.91594367e-01,  9.95740407e-01,  3.81938381e-02,  3.22281657e-03,
@@ -65,7 +67,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
         'distance_from_origin': 0.056158617824247796, 'x_velocity': -0.49894584098278555, 
         'y_velocity': 0.11579151587997107, 'forward_reward': -0.49894584098278555})
         '''
-        next_ob, rew, done, _, _= env.step(ac)
+        next_ob, rew, done, _= env.step(ac)
         
 
         # TODO rollout can end due to done, or due to max_path_length
