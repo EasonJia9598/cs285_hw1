@@ -22,6 +22,9 @@ Especially, we need to use our current model to generate the trajectories and th
 
 `S. Ross, G. J. Gordon, and J. A. Bagnell, ‘A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning’, arXiv [cs.LG]. 2011.`
 
+
+> # Original HW1 instructions 
+
 ## Setup
 
 You can run this code on your own machine or on Google Colab. 
